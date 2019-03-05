@@ -1,0 +1,509 @@
+---
+title: "GTD"
+author: "Jeeshu"
+date: "September 8, 2018"
+output: html_document
+---
+
+```{r include=FALSE}
+library(plotly)
+library(dplyr)
+library(readxl)
+library(ggplot2)
+library(tidyverse)
+library(tidyr)
+library(gtools)
+library(reshape2)
+```
+<style>
+ul {
+  list-style: none;
+}
+
+ul li::before {
+  content: "\2022";
+  color: #008080;
+  font-weight: bold;
+  display: inline-block; 
+  width: 1em;
+  margin-left: -1em;
+}
+</style>
+```{r include=FALSE}
+gtd_70to91 = read.csv("D:/Cources/Data Science/Datasets/Term1/EDA Datasets/Global Terror Attach data set and Code book/gtd_70to91_49566.csv")
+gtd_92to11 = read.csv("D:/Cources/Data Science/Datasets/Term1/EDA Datasets/Global Terror Attach data set and Code book/gtd_92to11_no 93_55072.csv")
+gtd_93 = read.csv("D:/Cources/Data Science/Datasets/Term1/EDA Datasets/Global Terror Attach data set and Code book/gtd1993_748.csv")
+gtd_12to15 = read.csv("D:/Cources/Data Science/Datasets/Term1/EDA Datasets/Global Terror Attach data set and Code book/gtd_12to15_52134.csv")
+full_table = smartbind(gtd_70to91,gtd_92to11,gtd_93,gtd_12to15)
+```
+<br><br><h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q1) Number of Attacks per year</font></b></h1><br>
+```{r include=FALSE}
+final_attacks = full_table %>% group_by(iyear) %>%
+  summarise(total_attacks =n())
+
+#final_attacks_plot = ggplot(final_attacks,aes(x=iyear,y=total_attacks))+
+ # geom_line(stat="identity",size=1,color="orange") +theme_bw()+
+  #geom_point(color="orange",size=3)+scale_x_continuous(breaks=seq(1970,2015,by=2))+
+  #scale_y_continuous(breaks=seq(0,20000,by=2000))+
+  #geom_text(aes(label=as.factor(total_attacks)),color="black",size=3,fontface="bold",vjust=-.5)+
+  #labs(title =  "NUMBER OF ATTACKS PER YEAR",subtitle="1970-2015",x="YEAR",y="NO OF ATTACKS")
+#final_attacks_plot
+```
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,warning=FALSE}
+plot<-plot_ly(final_attacks,x=~iyear,y=~total_attacks,name='TotalAttacks',mode='lines+markers',type = 'scatter')%>% layout(title="NUMBER OF ATTACKS PER YEAR",xaxis=list(title="Year"),yaxis=list(title="NUMBER OF ATTACKS"))
+plot
+```
+<h2 style="color:#000080"><font face="Times New Roman"><font face="Times New Roman"><u>Insights</u></font></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">The total number of attacks witnessed with respect to YEAR is showing a major dip in 1998-2004.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">After 2005 there is a tremendous increase in the number of terrorist attacks across the world.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">If go by the figures provided in the GTD, 2014 was recorded to have maximum terrorist attacks.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">The major reason for this innumerable increase is because of the formation of the new terrorist groups i.e. Boko Haram, Fulani Militants and ISIL.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q2) Number of bombing per year</font></b></h1> <br>
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE}
+
+###number of bombing for each year
+full_bombing_table = full_table %>% group_by(iyear) %>%
+  filter(attacktype1_txt == 'Bombing/Explosion') %>% summarise(total_bombings = n())
+#full_bombing_plot = ggplot(full_bombing_table,aes(x=iyear,y=total_bombings))+
+  #geom_line(size=1,color="#000080")+theme_bw()+
+  #geom_point(size=2,color="#000080")+
+  #scale_x_continuous(breaks = seq(1970,2015,by=2))+
+  #scale_y_continuous(breaks=seq(0,10000,by=1000))+
+  #theme_light()+
+  #geom_label(aes(label=as.factor(total_bombings)),color="black",size=3,fontface="bold",vjust=-.5)+
+#  labs(title='NUMBER OF BOMBINGS PER YEAR',subtitle = "1970-2015",x="YEAR",y="NO OF BOMBINGS")
+full_bombing_plot<-plot_ly(final_attacks,x=~iyear,y=~total_attacks,name='TotalAttacks',mode='lines',type = 'scatter',line = list(color = 'rgba(67,67,67,1)'))%>%
+  layout(title="NUMBER OF BOMBINGS  PER YEAR",xaxis=list(title="Year"),yaxis=list(title="NO OF BOMBINGS"))
+full_bombing_plot
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">Due to evolution of modern technology which resulted in the invention of new weapons and upgradation of the bombs , usage of bombs has been increased enormously with the course of time.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">As we do not have the complete data for the year 1993 hence, it is showing a massive dip in the number of attacks done by the bombs.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">From 1970 to 1984 the graph is almost the linear.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Maximum destruction by the terrorist bombing has been done in Year 2014.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q3) Terrorist attacks region wise per year</font></b><h1> <br>
+```{r fig.width = 10, fig.height = 9,fig.align="center",echo=FALSE}
+###terrorist attacks region wise per year
+library(reshape2)
+full_region_table = full_table %>%filter(doubtterr==0)%>%filter(region_txt!="Russia & NIS")%>% group_by(iyear,region_txt) %>% summarise(total_attacks = n())%>%rename(Year=iyear,Total_Attacks=total_attacks)
+
+#full_region_table$region_txt=ifelse(full_region_table$region_txt=="Russia & the Newly Independent #States (NIS)","Russia &NIS",full_region_table$region_txt)
+#View(full_region_table)
+full_region_plot = ggplot(full_region_table,aes(x=Year,y=Total_Attacks))+
+  geom_area(fill="#000080",alpha=.5)+
+  facet_wrap(~region_txt,scales ="free")+theme_bw()+
+  theme_light()+
+  theme(axis.text.x = element_blank())+
+  theme(axis.ticks.x = element_blank())+
+  labs(title="TERRORIST ATTACK REGION WISE",x="YEAR",y="")
+  
+
+p=ggplotly(full_region_plot)
+p
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">The major regions which has suffer the maximum impact of terrorist attack are:</font></h4></li>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">Middle East and North Africa</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">South Asia</font></h4></li>
+</ul>
+<h4><li><font color=#008080 face="Times New Roman">The year in which there is an major impact on the economy and infrastructure, because of the terrorist attacks is 2014.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">These terrorist attacks are majorly led by the most famous terrorist groups:</font></h4></li>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">ISIS</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Tal-I-Ban</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Al-Qaeda</font></h4></li>
+</ul>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q4) Top 5 type of terror attacks per region</font></b></h1><br>
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE}
+top5_70_15 = full_table%>%filter(attacktype1_txt!='.') %>%filter(doubtterr==0)%>%filter(attacktype1_txt!="Unknown")%>%filter(region_txt!="Russia & NIS")%>% group_by(region_txt,attacktype1_txt)%>% summarise(top_region_attacks =n())%>%top_n(n=5, wt=top_region_attacks)%>%
+  arrange(-top_region_attacks) 
+View(top5_70_15)
+full_top5_plot = ggplot(top5_70_15,aes(x=attacktype1_txt,y=top_region_attacks))+
+  geom_bar(stat="identity",aes(fill=attacktype1_txt), position = "dodge", width = 0.5)+
+  geom_text(aes(label=top_region_attacks),size=3, vjust=0.6)+
+  theme_light()+
+  theme(axis.text.x = element_blank())+ 
+  theme(axis.ticks.x = element_blank())+
+  facet_wrap(~region_txt,scales="free")+
+  labs(title="TOP-5 TYPE TERROR ATTACKS", x="ATTACK TYPES",y="",fill="ATTACK TYPES")
+p1=ggplotly(full_top5_plot)
+p1
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">Bombing and Explosions are the most frequently occuring attack type throughout the region because bombing is the most destructive attack type.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Armed assault is also very prominent attack type because arms are portable and can be easily carried.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Unarmed Assault is the least occuring attack type because it is least affective.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q5) Heaviest hit Target types (Based on both Killed and wounded)</font></b></h1> <br>
+```{r  fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE}
+###heaviest hit target types
+
+full_heavy_table = full_table %>% filter(targtype1_txt!="Unknown")%>%filter(targtype1_txt!="Other")%>%group_by(targtype1_txt) %>%
+  summarise(total_wounds=round(sum(nwound,na.rm=T)),total_kills = round(sum(nkill,na.rm = T)),total=sum(total_kills,total_wounds))
+
+
+
+#long=melt(full_heavy_table, id.vars="targtype1_txt",variable.name="casualities")  
+#long %>% group_by(targtype1_txt, as.factor(casualities)) %>% arrange(-value)
+
+#heavy_plot<-ggplot(long,aes(x=targtype1_txt, y=value)) +
+  #geom_bar(aes(fill=as.factor(casualities)),width = 0.8, stat="identity", position="stack")+
+  #theme_light()+
+  #theme(axis.text.x = element_text(angle = 90), legend.position = "none")+
+  #theme(legend.position = c(0.9, 0.7))+
+ 
+  #labs(title="HEAVIEST-HITS",subtitle="1970-2015", x="TRAGET TYPES",y="HEAVIEST HITS",fill="CASUALITIES")
+#p2<-ggplotly(heavy_plot)
+#p2
+full_heavy_table$targtype1_txt=as.character(full_heavy_table$targtype1_txt)
+
+full_heavy_table$targtype1_txt <- factor(full_heavy_table$targtype1_txt, levels = unique(full_heavy_table$targtype1_txt)[order(full_heavy_table$total, decreasing = TRUE)])
+a <- list(
+  title = "Casualty Type",
+  showticklabels = TRUE,
+  tickangle = 90
+)
+p2<-plot_ly(full_heavy_table,x=~targtype1_txt,y=~total_wounds,type = 'bar',name = "Wounded",opacity=.9)%>%
+    add_trace(y=~total_kills,name="Killed")%>%
+    layout(title="HEAVIEST HIT TARGETS",
+      barmode="stack",
+        yaxis=list(title="NO OF CASULTIES"),
+        xaxis=a)
+p2
+  
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">Private citizens and property are the heaviest hit target type because in any country they are most prominent in number.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Milatry and Police comes next because they are deployed to protect private citizens and comes under countries defence.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Airport and airlines are least affected target type because they are under high security and surveillance.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q6) Terrorist attack in India and Pakistan in last 45 years</font></b><h1> <br>
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,warning=FALSE,message=FALSE,results="hidden",include=FALSE}
+
+full_table_india = full_table %>%filter(doubtterr==0)%>% filter(country_txt == 'India' | country_txt == 'Pakistan')%>%
+  group_by(country_txt,iyear) %>% summarise(total_attacks = n())
+#f<-spread(full_table_india,country_txt,total_attacks)
+#f[is.na(f)]<-0
+View
+#full_table_plot = ggplot(full_table_india,aes(x=iyear,y=total_attacks))+
+  #geom_line(aes(color = country_txt))+
+  #theme_light()+
+  #labs(title="IND Vs PAK TERROR-ATTACKS",subtitle="1970-2015", x="YEAR WISE",y="ATTACKS",color="COUNTRIES")+
+  #scale_x_continuous(breaks = seq(1970,2015,2))+
+  #scale_y_continuous(breaks =seq(0,3000,by=400))
+#full_table_plot
+#p3<-ggplotly(full_table_plot)
+#p3
+```
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,warning=FALSE,message=FALSE}
+p3=plot_ly(full_table_india,x=~iyear,y=~total_attacks,type="scatter",mode="lines",color=~country_txt)%>%
+layout(title="TERRORIST ATTACKS IND VS PAK", 
+       xaxis=list(title="YEAR"),
+       yaxis=list(title="TERRORIST ATTACKS"))
+p3
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman"><b>India</b></font></h4></li>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">In India there is rise in terror attacks after 2007 because of terror attacks in Jammu and Kashmir and attacks by Maoist groups in states like Bihar, Jharkhand, Chhattishgarh.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Terrors has increased in 2014 in North Eastern parts of the country because of offensive approach of Indian government towards native tribal people.</font></h4></li>
+</ul>
+<h4><li><font color=#008080 face="Times New Roman"><b>Pakistan</b></font></h4></li>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">Due to external forces operation Zarb-e-Azab, a joint military offensive being conducted by Pakistan Armed Forces in 2013 against various military groups, militants started terror attacks in mass in Pakistan.</font></h4></li>
+</ul>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q7)  Terror attack in United States vs Russian Federation/USSR in last 45 years</font></b></h1> <br>
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE}
+
+full_table_unitedstates = full_table %>%filter(doubtterr==0)%>%filter(country_txt == 'United States' | country_txt == 'Russia' | country_txt == 'Soviet Union') %>%
+group_by(country_txt,iyear) %>% summarise(total_attacks = n())
+f<-spread(full_table_unitedstates,country_txt,total_attacks)
+View(f)
+f<-f%>%
+  rename(TERRORIST_ATTACKS=`United States`)
+#full_table_plot = ggplot(full_table_unitedstates,aes(x=iyear,y=total_attacks))+
+  #geom_line(aes(color=country_txt))+scale_x_continuous(breaks = seq(1970,2015,1))+
+  #theme(axis.text = element_text(angle=90))+
+  #labs(title= "Line Chart",subtitle="Terrorist attacks in united states vs USSR")
+#full_table_plot
+f<-plot_ly(f,x=~iyear,y=~TERRORIST_ATTACKS,type="scatter",mode='lines',name="USA",fill='tozeroy')%>%
+  add_trace(x=~iyear,y=~`Soviet Union`,name="USSR",type="scatter",mode="lines",fill="tozeroy")%>%
+  add_trace(x=~iyear,y=~Russia,name="Russia",type="scatter",mode="lines",fill="tozeroy")%>%
+  layout(title="TERRORIST ATTACKS USA VS USSR/RUSSIA",
+         xaxis=list(title="YEAR",
+         yaxis=list(title="TERRORIST ATTACKS")))
+f
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">From 1970's to 1977 there is a hike in US terror attacks data because during that time there were a dozen radical underground groups like the Weather Underground, the New World Liberation Front and the Symbionese Liberation Army. The members of those group didn't gave up on their Utopian Dream or All American and used to do protest bombing in cities like New York, Chicago and San Francisco.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">The Soviet Union was first attacked on 8th Jan 1978 and Russia got separated from Soviet Union on 25th 1991. There were only 5 attacks between July 1991 to September 1992.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Chechnya was a major hub in the oil infrastructure of Russia and hence its secession would hurt the country's economy and energy access. Other republics of Russia, such as Tatarstan, would consider seceding from the Russian Federation if Chechnya were granted the right to be separated.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">The First Chechen War took place from 1994 to 1996.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q8) Where are there the most casualties?</font></b></h1> <br>
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,results="hide",warning=FALSE,include=FALSE}
+file<-full_table%>%select(country_txt,nkill,nwound,iyear)
+file[is.na(file)]<-0
+file1<-file%>%group_by(country_txt)%>%summarise(total_kills = round(sum(total_kills=nkill,nwound)))%>%arrange(-total_kills)%>%head(10) 
+
+files<-file1%>%
+  group_by(country_txt)%>%
+  rename(c=country_txt,k=total_kills)
+View(files)  
+#plot<-ggplot(file,aes(x=country_txt, y=total_kills))+
+  #geom_bar(stat="identity", aes(fill=country_txt,alpha=0.5), width = 0.5)+theme_bw()+theme_light()+
+  
+  #coord_flip()+
+  #labs(title="MOST CASUALITIES", x="COUNT OF ATTACKS",y="COUNTRIES",fill="COUNTRIES")+
+ # theme(legend.position = c(0.9,0.3))
+#plot<-ggplotly(plot)
+#plot
+str(files)
+files$c=as.character(files$c)
+str(files)
+files$c <- factor(files$c, levels = unique(files$c)[order(files$k, decreasing = FALSE)])
+```
+
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,warning=FALSE}
+ax <- list(
+title = "COUNTRIES",
+zeroline = FALSE,
+showline = FALSE,
+showticklabels = FALSE,
+showgrid = FALSE)
+f4<-plot_ly(data=files, x=~k, y=~c ,type = "bar",color = ~c)%>%
+  layout(title="COUNTRIES WITH MOST CASUALITIES",yaxis = ax,xaxis=list(title="NUMBER OF CASUALITIES"))
+f4
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">Much better organized and planned than the first Chechen War, the air strike and ground offence begun in the Second Chechan War which took place from 1999-2000, the Russian military took control over most regions.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">The casualties increased in the Middle East countries, like Iraq and Syria due to attacks by terrorist organisation ISIS (Islamic State of Iraq and al-Sham).</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">In Nigeria the terrorist organisation Boko Haram was responsible to carry out most prominent attacks carrying casualties.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Taleban, who refer to themselves as the Islamic Emirate of Afghanistan(IEA), are a Sunni Islamic fundamentalist political movement in Afghanistan waging war (an insurgency, or jihad) within that country.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q9) How have casualties evolved throughout the years?</font></b></h1><br>
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,warning=FALSE}
+
+#p5
+full_table_cas= full_table %>% group_by(iyear) %>% summarise(killed=sum(nkill,na.rm = T),wounded=sum(nwound,na.rm = T),total_casualities =sum(killed,wounded))
+View(full_table_cas)
+
+p5<-plot_ly(data=full_table_cas,x=~iyear,y=~total_casualities,type="scatter",mode="line",fill="tozeroy")%>%layout(title="CASUALTIES OVER THE YEARS",xaxis=list(title="YEAR"),yaxis=list(title="TOTAL CASUALTIES"))
+p5
+full_table_cas_years= full_table %>% group_by(iyear,region_txt) %>% summarise(killed=sum(nkill,na.rm = T),wounded=sum(nwound,na.rm = T),total_casualities =sum(killed,wounded))
+#p4<-plot_ly(full_table_cas_years,x=~wounded,y=~killed,type="scatter",mode = 'markers',frame=~iyear,hoverinfo="text",text=~paste("Region:",region_txt,
+#"
+#</br>Total Casualities:",total_casualities,
+#"
+#</br>Total Wounded:",wounded,
+#"
+#</br>Total Killed:",killed),
+
+#color=~region_txt,size = ~total_casualities,
+       # marker = list( opacity = 0.5))%>%animation_opts(1000, easing = "elastic", #000080raw = FALSE)%>%
+  #animation_slider(currentvalue = list(prefix = "YEAR ", font = list(color="#000080")))
+
+#p4
+
+
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">One of the reason for increase in casualties over the years is due to enhancement of technology in terms of weapons, explosive etc and ease of access to ideas to create explosives.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">It has allowed terrorist organisations to costlessly communicate their message and aims to the world, allowing them to recruit new members, coordinate global attacks and better evade surveillance.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Also, we can see a constant increase in the population from 1970 to 2015. In 1970 the world's population was around 368 crores and in 2015 it was around 754 crores. So terror attacks has more prominent effects in terms of casualties in 2015 than compared to 1970.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q10) What are the casualties by weapon type?</font></b></h1><br>
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,results="hide",warning=FALSE}
+full_table_cas_weapon = full_table %>%filter(weaptype1_txt!="Unknown")%>%filter(weaptype1_txt!="Other")%>%group_by(weaptype1_txt) %>% summarise(total_casualities = sum(nkill,na.rm=T)+sum(nwound,na.rm=T)) %>% arrange(-total_casualities)
+
+#full_table_cas_weapon_plot #=ggplot(full_table_cas_weapon,aes(reorder(x=weaptype1_txt,-total_casualities),y=total_casualities))#+geom_bar(stat='Identity',width=0.5,aes(fill=weaptype1_txt))+labs(title="Bar Chart",subtitle="Total #casualities for different weapon type",x="Weapon type",y="Total casualities")+theme(axis.text.x = #element_text(angle = 90))+theme(axis.text.x = element_blank(),axis.ticks.x = #element_blank(),legend.position = "bottom",legend.title = element_blank())
+#full_table_cas_weapon_plot
+full_table_cas_weapon$weaptype1_txt=as.character(full_table_cas_weapon$weaptype1_txt)
+full_table_cas_weapon$weaptype1_txt <- factor(full_table_cas_weapon$weaptype1_txt, levels = unique(full_table_cas_weapon$weaptype1_txt)[order(full_table_cas_weapon$total_casualities, decreasing = TRUE)])
+ax <- list(
+title = "WEAPON TYPE",
+zeroline = FALSE,
+showline = FALSE,
+showticklabels = FALSE,
+showgrid = FALSE)
+
+```
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,warning=FALSE}
+p5<-plot_ly(full_table_cas_weapon,x=~weaptype1_txt,y=~total_casualities,type="bar",color=~weaptype1_txt)%>%layout(title="CASUALITIES BY TYPE OF WEAPON",xaxis=ax,yaxis=list(title="TOTAL CASUALITIES"))
+p5
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">Bombing/Explosives are most commonly used for terror attacks, since it is more destructive and effective.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Firearms are the second as it is easily available.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Mele, Incendiary are least effective.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q11) Are certain nationalities more targeted? If yes, which one?</font></b></h1> <br>
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,results="hide",warning=FALSE}
+full_table_target = full_table %>%filter(as.character(natlty1_txt)!=as.character(country_txt))%>%filter(natlty1_txt!=".",natlty1_txt!="International",natlty1_txt
+                                                                                                        !="Multinational")%>%group_by(natlty1_txt) %>% summarise(total_targets = sum(nkill,na.rm = T)+sum(nwound,na.rm=T))%>%arrange(-total_targets)%>%head(10)
+#full_table_target_plot = ggplot(full_table_target,aes(reorder(x=natlty1_txt,-total_targets),y=total#_targets))+geom_bar(stat='Identity',width=0.5,aes(fill=natlty1_txt))+theme(axis.text.x = #element_blank(),axis.ticks.x = element_blank(),legend.position = "bottom",legend.title = #element_blank()) +labs(title="Bar Chart",subtitle="Total Target types in certain nations",x="Nations #targeted",y="Total Affected")
+#full_table_target_plot
+
+full_table_target$natlty1_txt=as.character(full_table_target$natlty1_txt)
+full_table_target$natlty1_txt <- factor(full_table_target$natlty1_txt, levels = unique(full_table_target$natlty1_txt)[order(full_table_target$total_targets, decreasing = TRUE)])
+ax <- list(
+title = "NATIONALITIES",
+zeroline = FALSE,
+showline = FALSE,
+showticklabels = FALSE,
+showgrid = FALSE)
+```
+```{r fig.width = 10, fig.height = 6,fig.align="center",echo=FALSE,warning=FALSE}
+p6<-plot_ly(full_table_target,x=~natlty1_txt,y=~total_targets,type="bar",color = ~natlty1_txt)%>%
+  layout(title="NATIONALITIES MOST TARGETED",xaxis=ax,yaxis=list(title="TOTAL KILLS"))
+p6
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">USA nationalities are most targeted nationalities because of the strict policies and campaigns like War on Terrorism against the terrorist groups across the globe.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Also because of religious descrimination towards the islam, there is a hatred among the islamic terror groups across the world.</font></h4></li>
+</ul>
+<br>
+<h1 align = 'left' style="color:blue;"><b><font face="Times New Roman">Q12) Are some countries better at defending themselves against terrorist attacks? If yes, which is the safest country to live</font></b></h1> <br>
+```{r echo=FALSE,warning=FALSE,fig.width=10,fig.height=6,include=FALSE}
+
+#12)Are some countries better at defending themselves against terrorist attacks? 
+
+#creating one dataframe 
+final_safest = full_table%>%select("country_txt","success") 
+
+#Replacing NA values with zero
+final_safest[is.na(final_safest)] <- 0
+
+
+##filtering out attacks which were not successful 
+fin_safest = final_safest %>% filter(success== '0') %>% group_by(country_txt) %>% summarise(tot_not_suc = n())
+View(fin_safest)
+##counting total number of attacks 
+tot_safest = final_safest %>% group_by(country_txt) %>% summarise(tot_att = n())
+
+##merging not successful attacks and total attacks in one Df
+ratio_safest = merge(fin_safest, tot_safest, all.x = T)
+View(ratio_safest)
+mean(ratio_safest$tot_att)
+median(ratio_safest$tot_att)
+
+
+##splitting the data into 2 based on the number of attacks (greater than 100 and less than 100)
+split_data_1 = ratio_safest %>% filter(tot_att > 100)
+View(split_data_1)
+split_data_1$percent = (split_data_1$tot_not_suc/split_data_1$tot_att)*100
+top_fift_split_1 = split_data_1 %>% arrange(-percent) %>% head(15)
+View(top_fift_split_1)  
+
+
+split_data_2 = ratio_safest %>% filter(tot_att<=100)
+View(split_data_2)
+split_data_2$percent = (split_data_2$tot_not_suc/split_data_2$tot_att)*100
+top_fift_split_2 = split_data_2 %>% arrange(-percent) %>% head(15)
+View(top_fift_split_2)
+
+
+##Visualization for the following graph 
+
+
+library(ggthemes)
+library(extrafont)
+library(plyr)
+library(scales)
+
+##Plotting of percentage defended attacks 
+library(ggthemes)
+library(extrafont)
+library(scales)
+library(plyr)
+```
+```{r echo=FALSE,fig.width=10,fig.height=6,fig.align="center"}
+great_hun =  ggplot(top_fift_split_1, aes(x=country_txt, y=percent)) +
+  geom_segment( aes(x=country_txt, xend=country_txt, y=0, yend=percent), color="blue") +
+  geom_point( color="orange", size=4, alpha=0.6) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  xlab("Countries") +
+  ylab("Percentage of defended attacks") + labs(title="Countries with attacks more than 100")
+#Viewing the first plot
+great_hun<-ggplotly(great_hun)
+great_hun
+##Creating labels for circular bar chart
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman"><b>Ireland</b></font></h4></li>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">Ireland has a special defence force "The Army Ranger Wing (ARW)".  ARW also selects personnel from the Naval Service and Air Corps. The ARW was established in 1980 with the primary role of counter terrorism and evolved to both special operations and counter terrorism roles.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">The ARW trains with special forces units around the world, particularly in Europe. Rangers have served abroad in a number of international peacekeeping missions, including in Somalia, East Timor, Liberia, and Chad. So Ireland has defended many terrorist attacks in past.</font></h4></li>
+</ul>
+<h4><li><font color=#008080 face="Times New Roman"><b>Israel</b></font></h4></li>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">For more than six decades Israel has been in the midst of terrorism, which is why they have developed efficient counter-terrorism policies.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">They have many NGO's, government and international agencies are working together to curb terrorism.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">They have aviation security, police cooperation and emergency management procedures.</font></h4></li>
+</ul>
+</ul>
+<br>
+```{r echo=FALSE,fig.width = 10, fig.height = 6,fig.align="center"}
+less_hun =  ggplot(top_fift_split_2, aes(x=country_txt, y=percent)) +
+  geom_segment( aes(x=country_txt, xend=country_txt, y=0, yend=percent), color="blue") +
+  geom_point( color="orange", size=4, alpha=0.6) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  xlab("Countries") +
+  ylab("Percentage of defended attacks") + labs(title= "Countries with attacks less than/equal to 100")
+##Viewing the second plot
+less_hun<-ggplotly(less_hun)
+less_hun
+```
+<h2 style="color:#000080"><font face="Times New Roman"><u>Insights</u></font></h2>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman"><b>Mauritius</b></font></h4></li>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">It is a island nation with a very small population.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">The economy is mainly sustained on tourism, which makes it a highly unlikely target for terrorism</font></h4></li>
+</ul>
+<h4><li><font color=#008080 face="Times New Roman"><b>Vatican City</b></font></h4></li>
+<ul>
+<h4><li><font color=#008080 face="Times New Roman">It is the smallest country in the world. It is the headquarters of the Roman Catholic Church and is home to the Pope.</font></h4></li>
+<h4><li><font color=#008080 face="Times New Roman">Vatican City can be consider safe due to high security arrangements for preserving the religious sanctity.</font></h4></li>
+</ul>
+</ul>
+<br><br><br><br><br>
